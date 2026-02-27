@@ -1,12 +1,10 @@
 // server/services/auth.service.js
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { db, schema } from "../config/db.js";
 import { eq } from "drizzle-orm";
+import { issueTokens } from "./token.service.js";
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS) || 10;
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
 export async function register({ email, password }) {
   const normalized = email.trim().toLowerCase();
@@ -25,7 +23,8 @@ export async function register({ email, password }) {
     .values({ email: normalized, passwordHash, role: "user", isVerified: false })
     .returning();
 
-  const token = jwt.sign({ sub: inserted.id, email: inserted.email, role: inserted.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  // issue both access + refresh tokens
+  const { accessToken, refreshToken } = await issueTokens(inserted);
 
   return {
     user: {
@@ -35,7 +34,8 @@ export async function register({ email, password }) {
       isVerified: inserted.isVerified,
       createdAt: inserted.createdAt,
     },
-    token,
+    accessToken,
+    refreshToken,
   };
 }
 
@@ -55,7 +55,8 @@ export async function login({ email, password }) {
     throw err;
   }
 
-  const token = jwt.sign({ sub: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  // issue both access + refresh tokens
+  const { accessToken, refreshToken } = await issueTokens(user);
 
   return {
     user: {
@@ -65,6 +66,7 @@ export async function login({ email, password }) {
       isVerified: user.isVerified,
       createdAt: user.createdAt,
     },
-    token,
+    accessToken,
+    refreshToken,
   };
 }
