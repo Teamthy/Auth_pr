@@ -1,0 +1,9 @@
+@" 
+node_modules/ 
+.env 
+.DS_Store 
+dist/ 
+build/ n
+pm-debug.log 
+yarn-error.log 
+"@ | Out-File -Encoding utf8 .gitignore
