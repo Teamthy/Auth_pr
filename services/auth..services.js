@@ -1,30 +1,49 @@
 // server/services/auth.service.js
 import bcrypt from "bcryptjs";
-import { db, schema } from "../config/db.js";
+import { db } from "../config/db.js";
+import { users } from "../config/usersSchema.js";
 import { eq } from "drizzle-orm";
 import { issueTokens } from "./token.service.js";
+import { sendEmail } from "../config/sendgrid.js";
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS) || 10;
 
+// REGISTER
 export async function register({ email, password }) {
   const normalized = email.trim().toLowerCase();
 
-  const existing = await db.select().from(schema.users).where(eq(schema.users.email, normalized));
+  // check if user already exists
+  const existing = await db.select().from(users).where(eq(users.email, normalized));
   if (existing.length > 0) {
     const err = new Error("Email already in use");
     err.status = 409;
     throw err;
   }
 
+  // hash password
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
+  // insert new user
   const [inserted] = await db
-    .insert(schema.users)
-    .values({ email: normalized, passwordHash, role: "user", isVerified: false })
+    .insert(users)
+    .values({
+      email: normalized,
+      passwordHash,
+      role: "user",
+      isVerified: false,
+    })
     .returning();
 
-  // issue both access + refresh tokens
+  // issue tokens
   const { accessToken, refreshToken } = await issueTokens(inserted);
+
+  // send verification email
+  await sendEmail({
+    to: inserted.email,
+    subject: "Verify your account",
+    text: `Click the link to verify: ${process.env.APP_URL}/verify/${inserted.id}`,
+    html: `<p>Click <a href="${process.env.APP_URL}/verify/${inserted.id}">here</a> to verify your account.</p>`,
+  });
 
   return {
     user: {
@@ -39,9 +58,10 @@ export async function register({ email, password }) {
   };
 }
 
+// LOGIN
 export async function login({ email, password }) {
   const normalized = email.trim().toLowerCase();
-  const [user] = await db.select().from(schema.users).where(eq(schema.users.email, normalized));
+  const [user] = await db.select().from(users).where(eq(users.email, normalized));
   if (!user) {
     const err = new Error("Invalid credentials");
     err.status = 401;
@@ -55,7 +75,6 @@ export async function login({ email, password }) {
     throw err;
   }
 
-  // issue both access + refresh tokens
   const { accessToken, refreshToken } = await issueTokens(user);
 
   return {
