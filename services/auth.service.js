@@ -4,9 +4,11 @@ import { users } from "../config/usersSchema.js";
 import { eq } from "drizzle-orm";
 import { issueTokens } from "./token.service.js";
 import { sendEmail } from "../config/sendgrid.js";
+import { refreshTokens } from "../config/refreshTokenSchema.js";
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS) || 10;
 
+// REGISTER
 export async function register({ email, password }) {
   const normalized = email.trim().toLowerCase();
 
@@ -31,6 +33,12 @@ export async function register({ email, password }) {
 
   const { accessToken, refreshToken } = await issueTokens(inserted);
 
+  // Save refresh token in DB
+  await db.insert(refreshTokens).values({
+    userId: inserted.id,
+    token: refreshToken,
+  });
+
   await sendEmail({
     to: inserted.email,
     subject: "Verify your account",
@@ -41,6 +49,7 @@ export async function register({ email, password }) {
   return { user: inserted, accessToken, refreshToken };
 }
 
+// LOGIN
 export async function login({ email, password }) {
   const normalized = email.trim().toLowerCase();
   const [user] = await db.select().from(users).where(eq(users.email, normalized));
@@ -59,9 +68,16 @@ export async function login({ email, password }) {
 
   const { accessToken, refreshToken } = await issueTokens(user);
 
+  // Save refresh token in DB
+  await db.insert(refreshTokens).values({
+    userId: user.id,
+    token: refreshToken,
+  });
+
   return { user, accessToken, refreshToken };
 }
 
+// RESEND VERIFICATION
 export async function resendVerificationEmail(email) {
   const normalized = email.trim().toLowerCase();
   const [user] = await db.select().from(users).where(eq(users.email, normalized));
@@ -86,4 +102,10 @@ export async function resendVerificationEmail(email) {
   });
 
   return { message: "Verification email resent" };
+}
+
+// LOGOUT
+export async function logout(userId) {
+  await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
+  return { message: "Logged out successfully" };
 }

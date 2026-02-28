@@ -1,17 +1,11 @@
-// server/config/schema.js
-import {
-  pgTable,
-  uuid,
-  varchar,
-  boolean,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp } from "drizzle-orm/pg-core";
+import { users } from "./usersSchema.js";
 
-export const users = pgTable("users", {
+export const refreshTokens = pgTable("refresh_tokens", {
   id: uuid("id").defaultRandom().primaryKey(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
-  role: varchar("role", { length: 50 }).default("user"),
-  isVerified: boolean("is_verified").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull(),   // store JWT string
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
