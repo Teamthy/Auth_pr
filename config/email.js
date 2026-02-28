@@ -1,11 +1,11 @@
 import nodemailer from "nodemailer";
 
 export const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,      // e.g. "smtp.sendgrid.net"
+  host: process.env.SMTP_HOST,     
   port: process.env.SMTP_PORT || 587,
-  secure: false,                    // true for 465, false for 587
+  secure: false,                  
   auth: {
-    user: process.env.SMTP_USER,    // e.g. "apikey" for SendGrid
-    pass: process.env.SMTP_PASS,    // your API key or password
+    user: process.env.SMTP_USER,    
+    pass: process.env.SMTP_PASS,    
   },
 });
