@@ -8,7 +8,7 @@ import verifyRoutes from "./routes/verify.routes.js";
 import resendRoutes from "./routes/resend.routes.js";
 import logoutRoutes from "./routes/logout.routes.js";
 import refreshRoutes from "./routes/refresh.routes.js";
-
+import resetRoutes from "./routes/reset.routes.js";
 
 
 const app = express();
@@ -24,7 +24,7 @@ app.use("/api", verifyRoutes);
 app.use("/api/auth", resendRoutes);
 app.use("/api/auth", logoutRoutes);
 app.use("/api/auth", refreshRoutes);
-
+app.use("/api/auth", resetRoutes);
 
 
 // Health check
