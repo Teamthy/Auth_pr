@@ -5,6 +5,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db, schema } from "../config/db.js";
 import { eq } from "drizzle-orm";
+import { authenticate } from "../middleware/auth.middleware.js";
+
+
+
 
 const router = Router();
 
@@ -115,5 +119,11 @@ router.post(
     }
   }
 );
+
+router.get("/profile", authenticate, async (req, res) => {
+  const user = await db.select().from(users).where(eq(users.id, req.user.sub));
+  res.json(user);
+});
+
 
 export default router;

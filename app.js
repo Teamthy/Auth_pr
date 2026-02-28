@@ -9,13 +9,14 @@ import resendRoutes from "./routes/resend.routes.js";
 import logoutRoutes from "./routes/logout.routes.js";
 import refreshRoutes from "./routes/refresh.routes.js";
 import resetRoutes from "./routes/reset.routes.js";
-
+import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
+app.use(errorHandler);
 
 // Routes
 app.use("/api/auth", authRoutes);
