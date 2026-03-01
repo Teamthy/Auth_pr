@@ -10,6 +10,10 @@ import logoutRoutes from "./routes/logout.routes.js";
 import refreshRoutes from "./routes/refresh.routes.js";
 import resetRoutes from "./routes/reset.routes.js";
 import { errorHandler } from "./middleware/error.middleware.js";
+import profileRoutes from "./routes/profile.js";
+
+
+
 
 const app = express();
 
@@ -26,7 +30,7 @@ app.use("/api/auth", resendRoutes);
 app.use("/api/auth", logoutRoutes);
 app.use("/api/auth", refreshRoutes);
 app.use("/api/auth", resetRoutes);
-
+app.use("/api/profile", profileRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
